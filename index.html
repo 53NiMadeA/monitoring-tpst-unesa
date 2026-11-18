@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring TPST UNESA - Sistem Utama</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+</head>
+<body class="bg-slate-100 font-sans text-slate-800">
+
+    <div class="max-w-3xl mx-auto p-4 md:p-6">
+        <!-- Header & Switcher Lokasi -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">♻️ TPST UNESA - Sistem Monitoring</h1>
+                    <p class="text-sm text-slate-500">Pusat Pemantauan Aktivitas Pekerja (Kamera Belakang HP)</p>
+                </div>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 self-start md:self-auto">
+                    ● Kamera Belakang Aktif
+                </span>
+            </div>
+
+            <!-- Tombol Pilih Lokasi -->
+            <div class="mt-4">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Pilih Titik Lokasi Pemantauan:</label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button id="btn-lokasi-1" onclick="pilihLokasi(1)" class="flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold text-sm transition-all bg-green-600 text-white shadow-sm ring-2 ring-green-600">
+                        <span>🍲</span> Lokasi 1: Pengolahan Limbah Makanan
+                    </button>
+                    <button id="btn-lokasi-2" onclick="pilihLokasi(2)" class="flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold text-sm transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                        <span>🧴</span> Lokasi 2: Pemilahan Sampah Plastik
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Area Utama: Kamera & Panel Status -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <!-- Feed Kamera -->
+            <div class="md:col-span-2 bg-slate-900 rounded-xl shadow-sm overflow-hidden relative flex items-center justify-center min-h-[320px]">
+                <video id="webcam" class="hidden" playsinline></video>
+                <!-- Perhatikan: kelas 'transform -scale-x-100' dihapus agar kamera belakang tidak terbalik (mirror) -->
+                <canvas id="output_canvas" class="w-full h-auto object-cover"></canvas>
+                
+                <div id="area-label" class="absolute top-3 left-3 bg-green-600/90 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow">
+                    📍 Area: Pengolahan Limbah Makanan
+                </div>
+                <div class="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2.5 py-1 rounded">
+                    Nilai Gerakan: <span id="motion-val" class="font-mono font-bold">0.0000</span>
+                </div>
+            </div>
+
+            <!-- Panel Status Real-Time -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Status Terkini</h2>
+                    <div id="status-badge" class="p-3 rounded-lg text-white font-bold text-center text-sm bg-slate-400 mb-3 transition-colors">
+                        Memuat Kamera...
+                    </div>
+                    <p id="status-desc" class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded border border-slate-100 mb-4">
+                        Menunggu deteksi kerangka tubuh...
+                    </p>
+
+                    <div class="bg-blue-50 border border-blue-100 p-3 rounded-lg">
+                        <p class="text-[11px] text-blue-800 leading-relaxed">
+                            ℹ️ **Aturan Sistem:** Status tidak aktif memicu anomali jika diam lebih dari **3 menit**. Data otomatis tercatat ke Spreadsheet setiap **1 menit**.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-slate-100">
+                    <p class="text-[11px] text-slate-400 text-center">TPST UNESA x PENS 2026</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Log Pengiriman Spreadsheet -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <div class="flex items-center justify-between mb-2">
+                <h2 class="text-sm font-bold text-slate-700">📋 Log Sinkronisasi Google Sheets (Otomatis tiap 1 Menit)</h2>
+                <span id="target-sheet-label" class="text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded">
+                    Target: Sheet Limbah Makanan
+                </span>
+            </div>
+            <div id="log-container" class="bg-slate-50 rounded-lg p-3 border border-slate-100 max-h-32 overflow-y-auto space-y-1.5">
+                <p id="log-info" class="text-xs text-slate-500 font-mono">Sistem aktif. Menunggu siklus pencatatan 1 menit pertama...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const videoElement = document.getElementById('webcam');
+        const canvasElement = document.getElementById('output_canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const statusBadge = document.getElementById('status-badge');
+        const statusDesc = document.getElementById('status-desc');
+        const motionValEl = document.getElementById('motion-val');
+        const logContainer = document.getElementById('log-container');
+
+        const LOKASI_CONFIG = {
+            1: {
+                nama: "Pengolahan Limbah Makanan",
+                sheetLabel: "Target: Sheet Limbah Makanan",
+                url: "https://script.google.com/macros/s/AKfycbxILC3hjL4qOnVPekKkZmrLKWfywXgf81mg4eaf0E1Gi_ybV4JV_LpuGQrNO4AkOcNBiQ/exec",
+                lineColor: "#22C55E",
+                threshold: 0.005
+            },
+            2: {
+                nama: "Pemilahan Sampah Plastik",
+                sheetLabel: "Target: Sheet Sampah Plastik",
+                url: "https://script.google.com/macros/s/AKfycbwV3_lZQYTg7H4MLZUpVPMUgyqQUKL7P6cg_qjUYiMce4AqngqEhuiS4JQs-aZJ6vek/exec",
+                lineColor: "#3B82F6",
+                threshold: 0.010
+            }
+        };
+
+        let lokasiAktif = 1;
+        const INACTIVE_LIMIT = 3 * 60 * 1000; 
+        let lastMovementTime = Date.now();
+        
+        let prevLeftWrist = { x: 0, y: 0 };
+        let prevRightWrist = { x: 0, y: 0 };
+
+        let currentStatus = "Bekerja Normal/Aktif";
+        let currentKeterangan = "Pekerja aktif beroperasi";
+        let currentGerakan = 0.0000;
+
+        function pilihLokasi(nomor) {
+            lokasiAktif = nomor;
+            lastMovementTime = Date.now();
+
+            const btn1 = document.getElementById('btn-lokasi-1');
+            const btn2 = document.getElementById('btn-lokasi-2');
+            const areaLabel = document.getElementById('area-label');
+            const targetSheetLabel = document.getElementById('target-sheet-label');
+
+            if (nomor === 1) {
+                btn1.className = "flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold text-sm transition-all bg-green-600 text-white shadow-sm ring-2 ring-green-600";
+                btn2.className = "flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold text-sm transition-all bg-slate-100 text-slate-600 hover:bg-slate-200";
+                areaLabel.className = "absolute top-3 left-3 bg-green-600/90 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow";
+                targetSheetLabel.className = "text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded";
+            } else {
+                btn2.className = "flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold text-sm transition-all bg-blue-600 text-white shadow-sm ring-2 ring-blue-600";
+                btn1.className = "flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold text-sm transition-all bg-slate-100 text-slate-600 hover:bg-slate-200";
+                areaLabel.className = "absolute top-3 left-3 bg-blue-600/90 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow";
+                targetSheetLabel.className = "text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded";
+            }
+
+            areaLabel.innerText = `📍 Area: ${LOKASI_CONFIG[nomor].nama}`;
+            targetSheetLabel.innerText = LOKASI_CONFIG[nomor].sheetLabel;
+            tambahLogUI(`Beralih pengamatan ke ${LOKASI_CONFIG[nomor].nama}`);
+        }
+
+        function tambahLogUI(pesan) {
+            const now = new Date();
+            const jam = now.toTimeString().split(' ')[0];
+            const p = document.createElement('p');
+            p.className = "text-xs text-slate-600 font-mono border-b border-slate-100 pb-1";
+            p.innerText = `[${jam}] ${pesan}`;
+            logContainer.prepend(p);
+        }
+
+        function kirimKeSheets() {
+            const config = LOKASI_CONFIG[lokasiAktif];
+            const now = new Date();
+            const tanggal = now.toISOString().split('T')[0];
+            const jam = now.toTimeString().split(' ')[0];
+
+            const data = {
+                tanggal: tanggal,
+                jam: jam,
+                status: currentStatus,
+                gerakan: currentGerakan,
+                keterangan: currentKeterangan
+            };
+
+            fetch(config.url, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify(data)
+            }).then(() => {
+                tambahLogUI(`✅ Tercatat ke ${config.nama}: ${currentStatus}`);
+            }).catch(err => {
+                console.error("Gagal kirim:", err);
+                tambahLogUI(`❌ Gagal sinkronisasi ke ${config.nama}`);
+            });
+        }
+
+        setInterval(kirimKeSheets, 60 * 1000);
+
+        function onResults(results) {
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+
+            const config = LOKASI_CONFIG[lokasiAktif];
+
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+            let badgeColor = "bg-emerald-600";
+
+            if (results.poseLandmarks) {
+                drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {color: config.lineColor, lineWidth: 2});
+                drawLandmarks(canvasCtx, results.poseLandmarks, {color: '#EF4444', lineWidth: 1, radius: 3});
+
+                const leftWrist = results.poseLandmarks[15];
+                const rightWrist = results.poseLandmarks[16];
+                let movement = 0;
+
+                if (lokasiAktif === 1) {
+                    movement = Math.abs(rightWrist.y - prevRightWrist.y);
+                } else {
+                    let moveLeft = Math.abs(leftWrist.x - prevLeftWrist.x) + Math.abs(leftWrist.y - prevLeftWrist.y);
+                    let moveRight = Math.abs(rightWrist.x - prevRightWrist.x) + Math.abs(rightWrist.y - prevRightWrist.y);
+                    movement = moveLeft + moveRight;
+                }
+
+                prevLeftWrist = { x: leftWrist.x, y: leftWrist.y };
+                prevRightWrist = { x: rightWrist.x, y: rightWrist.y };
+                currentGerakan = parseFloat(movement.toFixed(4));
+                motionValEl.innerText = currentGerakan.toFixed(4);
+
+                if (movement > config.threshold) {
+                    lastMovementTime = Date.now();
+                }
+
+                let waktuDiam = Date.now() - lastMovementTime;
+
+                if (waktuDiam > INACTIVE_LIMIT) {
+                    currentStatus = "Pekerja tidak bekerja pada jam kerja";
+                    badgeColor = "bg-red-600";
+                    currentKeterangan = lokasiAktif === 1 
+                        ? "Pekerja statis/tidak ada gerakan > 3 menit" 
+                        : "Tangan statis/tidak memilah plastik > 3 menit";
+                } else {
+                    currentStatus = "Bekerja Normal/Aktif";
+                    badgeColor = "bg-emerald-600";
+                    currentKeterangan = lokasiAktif === 1 
+                        ? "Pekerja aktif beroperasi" 
+                        : "Pekerja aktif memilah plastik";
+                }
+            } else {
+                currentStatus = "Meninggalkan Area Kerja";
+                badgeColor = "bg-amber-500";
+                currentKeterangan = "Tidak ada orang terdeteksi di kamera";
+                motionValEl.innerText = "0.0000";
+            }
+
+            statusBadge.className = `p-3 rounded-lg text-white font-bold text-center text-sm ${badgeColor} mb-3 transition-colors shadow-sm`;
+            statusBadge.innerText = currentStatus;
+            statusDesc.innerText = currentKeterangan;
+
+            canvasCtx.restore();
+        }
+
+        const pose = new Pose({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+        });
+
+        pose.setOptions({
+            modelComplexity: 1,
+            smoothLandmarks: true,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        pose.onResults(onResults);
+
+        // Menggunakan kamera belakang HP (environment) dan menghapus efek cermin (mirror)
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await pose.send({image: videoElement});
+            },
+            width: 640,
+            height: 480,
+            facingMode: "environment" 
+        });
+
+        camera.start().catch(err => {
+            alert("Gagal mengakses kamera belakang HP: " + err);
+        });
+    </script>
+</body>
+</html>
