@@ -3,95 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoring TPST UNESA - Sistem Utama</title>
+    <title>Monitoring TPST UNESA - UNESA x PENS</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- MediaPipe Vision & Camera Utils -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
 </head>
-<body class="bg-slate-100 font-sans text-slate-800">
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col justify-between">
 
-    <div class="max-w-3xl mx-auto p-4 md:p-6">
-        <!-- Header & Switcher Lokasi -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-4">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-100 pb-4">
-                <div>
-                    <h1 class="text-2xl font-bold text-slate-900">♻️ TPST UNESA - Sistem Monitoring</h1>
-                    <p class="text-sm text-slate-500">Pusat Pemantauan Aktivitas Pekerja (Kamera Belakang HP)</p>
+    <!-- Top Navigation / Header Kolaborasi -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <!-- Brand & Logo -->
+            <div class="flex items-center gap-3">
+                <div class="bg-emerald-600 text-white font-black px-3 py-2 rounded-xl text-sm tracking-wide shadow-sm flex items-center gap-1.5">
+                    <span>♻️</span> TPST
                 </div>
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 self-start md:self-auto">
-                    ● Kamera Belakang Aktif
-                </span>
+                <div>
+                    <h1 class="text-base font-bold text-slate-900 leading-tight">Smart Worker Monitoring System</h1>
+                    <p class="text-xs text-slate-500 font-medium">Tempat Pembuangan Sampah Terpadu (TPST) UNESA</p>
+                </div>
             </div>
 
-            <!-- Tombol Pilih Lokasi -->
-            <div class="mt-4">
-                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Pilih Titik Lokasi Pemantauan:</label>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <button id="btn-lokasi-1" onclick="pilihLokasi(1)" class="flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold text-sm transition-all bg-green-600 text-white shadow-sm ring-2 ring-green-600">
-                        <span>🍲</span> Lokasi 1: Pengolahan Limbah Makanan
-                    </button>
-                    <button id="btn-lokasi-2" onclick="pilihLokasi(2)" class="flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold text-sm transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
-                        <span>🧴</span> Lokasi 2: Pemilahan Sampah Plastik
-                    </button>
-                </div>
+            <!-- Badge Kolaborasi Institusi UNESA x PENS -->
+            <div class="flex items-center gap-2 bg-slate-100 border border-slate-200/80 px-3 py-1.5 rounded-full shadow-2xs">
+                <span class="text-xs font-bold text-emerald-700 tracking-wide">UNESA</span>
+                <span class="text-xs text-slate-400 font-semibold">×</span>
+                <span class="text-xs font-bold text-blue-700 tracking-wide">PENS</span>
+                <span class="ml-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-5xl mx-auto p-4 sm:p-6 w-full flex-grow space-y-5">
+        
+        <!-- Panel Switcher Lokasi -->
+        <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-4 sm:p-5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Pilih Titik Lokasi Pemantauan Lapangan:</label>
+                <span class="text-[11px] font-medium text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md">Kamera Belakang Aktif (Environment)</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button id="btn-lokasi-1" onclick="pilihLokasi(1)" class="flex items-center gap-3 p-3.5 rounded-xl font-semibold text-sm transition-all bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600 ring-offset-2">
+                    <span class="text-lg bg-white/20 p-2 rounded-lg">🍲</span>
+                    <div class="text-left">
+                        <div class="font-bold">Lokasi 1</div>
+                        <div class="text-xs font-normal text-emerald-100">Pengolahan Limbah Makanan</div>
+                    </div>
+                </button>
+                <button id="btn-lokasi-2" onclick="pilihLokasi(2)" class="flex items-center gap-3 p-3.5 rounded-xl font-semibold text-sm transition-all bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
+                    <span class="text-lg bg-slate-100 p-2 rounded-lg">🧴</span>
+                    <div class="text-left">
+                        <div class="font-bold text-slate-800">Lokasi 2</div>
+                        <div class="text-xs font-normal text-slate-500">Pemilahan Sampah Plastik</div>
+                    </div>
+                </button>
             </div>
         </div>
 
-        <!-- Area Utama: Kamera & Panel Status -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <!-- Feed Kamera -->
-            <div class="md:col-span-2 bg-slate-900 rounded-xl shadow-sm overflow-hidden relative flex items-center justify-center min-h-[320px]">
+        <!-- Grid Layout Utama: Kamera & Panel Status -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            
+            <!-- Sisi Kiri: Video & Canvas Feed (2 Kolom) -->
+            <div class="lg:col-span-2 bg-slate-900 rounded-2xl shadow-md overflow-hidden relative flex items-center justify-center min-h-[380px] border border-slate-800">
                 <video id="webcam" class="hidden" playsinline></video>
-                <!-- Perhatikan: kelas 'transform -scale-x-100' dihapus agar kamera belakang tidak terbalik (mirror) -->
-                <canvas id="output_canvas" class="w-full h-auto object-cover"></canvas>
+                <canvas id="output_canvas" class="w-full h-auto object-cover max-h-[460px]"></canvas>
                 
-                <div id="area-label" class="absolute top-3 left-3 bg-green-600/90 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow">
-                    📍 Area: Pengolahan Limbah Makanan
+                <!-- Overlay Area Aktif -->
+                <div id="area-label" class="absolute top-4 left-4 bg-emerald-600/90 backdrop-blur-md text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5 border border-emerald-500/30">
+                    <span>📍</span> <span>Area: Pengolahan Limbah Makanan</span>
                 </div>
-                <div class="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2.5 py-1 rounded">
-                    Nilai Gerakan: <span id="motion-val" class="font-mono font-bold">0.0000</span>
+
+                <!-- Overlay Real-time Motion Metric -->
+                <div class="absolute bottom-4 right-4 bg-slate-950/80 backdrop-blur-md text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-800 shadow-sm flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span>Nilai Gerakan: <span id="motion-val" class="font-mono font-bold text-white">0.0000</span></span>
                 </div>
             </div>
 
-            <!-- Panel Status Real-Time -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col justify-between">
-                <div>
-                    <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Status Terkini</h2>
-                    <div id="status-badge" class="p-3 rounded-lg text-white font-bold text-center text-sm bg-slate-400 mb-3 transition-colors">
-                        Memuat Kamera...
+            <!-- Sisi Kanan: Panel Status Real-Time & Informasi (1 Kolom) -->
+            <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-5 flex flex-col justify-between space-y-4">
+                <div class="space-y-4">
+                    <div>
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Status Pekerja Terkini</h2>
+                        <div id="status-badge" class="p-3.5 rounded-xl text-white font-bold text-center text-xs tracking-wide bg-slate-400 shadow-xs transition-colors duration-300">
+                            MEMUAT KAMERA...
+                        </div>
                     </div>
-                    <p id="status-desc" class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded border border-slate-100 mb-4">
-                        Menunggu deteksi kerangka tubuh...
-                    </p>
 
-                    <div class="bg-blue-50 border border-blue-100 p-3 rounded-lg">
-                        <p class="text-[11px] text-blue-800 leading-relaxed">
-                            ℹ️ **Aturan Sistem:** Status tidak aktif memicu anomali jika diam lebih dari **3 menit**. Data otomatis tercatat ke Spreadsheet setiap **1 menit**.
+                    <div class="bg-slate-50 border border-slate-100 p-3.5 rounded-xl space-y-1">
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Keterangan Sistem</span>
+                        <p id="status-desc" class="text-xs text-slate-600 font-medium leading-relaxed">
+                            Menunggu deteksi kerangka tubuh pekerja...
+                        </p>
+                    </div>
+
+                    <div class="bg-blue-50/70 border border-blue-100 p-3.5 rounded-xl flex items-start gap-2.5">
+                        <span class="text-blue-600 text-sm">ℹ️</span>
+                        <p class="text-[11px] text-blue-900 leading-relaxed font-medium">
+                            Status anomali aktif jika pekerja diam > 3 menit. Log data otomatis dikirim ke Google Sheets setiap 1 menit.
                         </p>
                     </div>
                 </div>
 
-                <div class="mt-4 pt-3 border-t border-slate-100">
-                    <p class="text-[11px] text-slate-400 text-center">TPST UNESA x PENS 2026</p>
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                    <span>MediaPipe Pose JS</span>
+                    <span class="text-emerald-600 font-bold">● Active Deployment</span>
                 </div>
             </div>
         </div>
 
-        <!-- Panel Log Pengiriman Spreadsheet -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-            <div class="flex items-center justify-between mb-2">
-                <h2 class="text-sm font-bold text-slate-700">📋 Log Sinkronisasi Google Sheets (Otomatis tiap 1 Menit)</h2>
-                <span id="target-sheet-label" class="text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded">
+        <!-- Panel Log Sinkronisasi Google Sheets -->
+        <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Log Sinkronisasi Google Sheets (Interval 1 Menit)</h2>
+                <span id="target-sheet-label" class="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-3 py-1 rounded-lg">
                     Target: Sheet Limbah Makanan
                 </span>
             </div>
-            <div id="log-container" class="bg-slate-50 rounded-lg p-3 border border-slate-100 max-h-32 overflow-y-auto space-y-1.5">
-                <p id="log-info" class="text-xs text-slate-500 font-mono">Sistem aktif. Menunggu siklus pencatatan 1 menit pertama...</p>
+            <div id="log-container" class="bg-slate-900 text-slate-200 rounded-xl p-3.5 border border-slate-800 max-h-36 overflow-y-auto space-y-1.5 font-mono text-xs">
+                <p id="log-info" class="text-slate-400">Sistem aktif. Menunggu siklus pencatatan 1 menit pertama...</p>
             </div>
         </div>
-    </div>
+    </main>
 
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-8 py-4 text-center text-xs text-slate-400">
+        <p>Proyek Kerja Praktik TPST UNESA • Jurusan Teknologi Multimedia Kreatif PENS 2026</p>
+    </footer>
+
+    <!-- Script Utama MediaPipe & Logic -->
     <script>
         const videoElement = document.getElementById('webcam');
         const canvasElement = document.getElementById('output_canvas');
@@ -106,14 +155,14 @@
                 nama: "Pengolahan Limbah Makanan",
                 sheetLabel: "Target: Sheet Limbah Makanan",
                 url: "https://script.google.com/macros/s/AKfycbxILC3hjL4qOnVPekKkZmrLKWfywXgf81mg4eaf0E1Gi_ybV4JV_LpuGQrNO4AkOcNBiQ/exec",
-                lineColor: "#22C55E",
+                lineColor: "#10B981", // Emerald
                 threshold: 0.005
             },
             2: {
                 nama: "Pemilahan Sampah Plastik",
                 sheetLabel: "Target: Sheet Sampah Plastik",
                 url: "https://script.google.com/macros/s/AKfycbwV3_lZQYTg7H4MLZUpVPMUgyqQUKL7P6cg_qjUYiMce4AqngqEhuiS4JQs-aZJ6vek/exec",
-                lineColor: "#3B82F6",
+                lineColor: "#3B82F6", // Blue
                 threshold: 0.010
             }
         };
@@ -139,18 +188,18 @@
             const targetSheetLabel = document.getElementById('target-sheet-label');
 
             if (nomor === 1) {
-                btn1.className = "flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold text-sm transition-all bg-green-600 text-white shadow-sm ring-2 ring-green-600";
-                btn2.className = "flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold text-sm transition-all bg-slate-100 text-slate-600 hover:bg-slate-200";
-                areaLabel.className = "absolute top-3 left-3 bg-green-600/90 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow";
-                targetSheetLabel.className = "text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded";
+                btn1.className = "flex items-center gap-3 p-3.5 rounded-xl font-semibold text-sm transition-all bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600 ring-offset-2";
+                btn2.className = "flex items-center gap-3 p-3.5 rounded-xl font-semibold text-sm transition-all bg-white text-slate-600 border border-slate-200 hover:bg-slate-50";
+                areaLabel.className = "absolute top-4 left-4 bg-emerald-600/90 backdrop-blur-md text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5 border border-emerald-500/30";
+                targetSheetLabel.className = "text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-3 py-1 rounded-lg";
             } else {
-                btn2.className = "flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold text-sm transition-all bg-blue-600 text-white shadow-sm ring-2 ring-blue-600";
-                btn1.className = "flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold text-sm transition-all bg-slate-100 text-slate-600 hover:bg-slate-200";
-                areaLabel.className = "absolute top-3 left-3 bg-blue-600/90 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow";
-                targetSheetLabel.className = "text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded";
+                btn2.className = "flex items-center gap-3 p-3.5 rounded-xl font-semibold text-sm transition-all bg-blue-600 text-white shadow-sm ring-2 ring-blue-600 ring-offset-2";
+                btn1.className = "flex items-center gap-3 p-3.5 rounded-xl font-semibold text-sm transition-all bg-white text-slate-600 border border-slate-200 hover:bg-slate-50";
+                areaLabel.className = "absolute top-4 left-4 bg-blue-600/90 backdrop-blur-md text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5 border border-blue-500/30";
+                targetSheetLabel.className = "text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200/60 px-3 py-1 rounded-lg";
             }
 
-            areaLabel.innerText = `📍 Area: ${LOKASI_CONFIG[nomor].nama}`;
+            areaLabel.innerHTML = `<span>📍</span> <span>Area: ${LOKASI_CONFIG[nomor].nama}</span>`;
             targetSheetLabel.innerText = LOKASI_CONFIG[nomor].sheetLabel;
             tambahLogUI(`Beralih pengamatan ke ${LOKASI_CONFIG[nomor].nama}`);
         }
@@ -159,7 +208,7 @@
             const now = new Date();
             const jam = now.toTimeString().split(' ')[0];
             const p = document.createElement('p');
-            p.className = "text-xs text-slate-600 font-mono border-b border-slate-100 pb-1";
+            p.className = "text-slate-300 font-mono text-xs border-b border-slate-800 pb-1";
             p.innerText = `[${jam}] ${pesan}`;
             logContainer.prepend(p);
         }
@@ -205,8 +254,8 @@
             let badgeColor = "bg-emerald-600";
 
             if (results.poseLandmarks) {
-                drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {color: config.lineColor, lineWidth: 2});
-                drawLandmarks(canvasCtx, results.poseLandmarks, {color: '#EF4444', lineWidth: 1, radius: 3});
+                drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {color: config.lineColor, lineWidth: 3});
+                drawLandmarks(canvasCtx, results.poseLandmarks, {color: '#EF4444', lineWidth: 1, radius: 4});
 
                 const leftWrist = results.poseLandmarks[15];
                 const rightWrist = results.poseLandmarks[16];
@@ -233,7 +282,7 @@
 
                 if (waktuDiam > INACTIVE_LIMIT) {
                     currentStatus = "Pekerja tidak bekerja pada jam kerja";
-                    badgeColor = "bg-red-600";
+                    badgeColor = "bg-rose-600";
                     currentKeterangan = lokasiAktif === 1 
                         ? "Pekerja statis/tidak ada gerakan > 3 menit" 
                         : "Tangan statis/tidak memilah plastik > 3 menit";
@@ -251,8 +300,8 @@
                 motionValEl.innerText = "0.0000";
             }
 
-            statusBadge.className = `p-3 rounded-lg text-white font-bold text-center text-sm ${badgeColor} mb-3 transition-colors shadow-sm`;
-            statusBadge.innerText = currentStatus;
+            statusBadge.className = `p-3.5 rounded-xl text-white font-bold text-center text-xs tracking-wide ${badgeColor} shadow-xs transition-colors duration-300`;
+            statusBadge.innerText = currentStatus.toUpperCase();
             statusDesc.innerText = currentKeterangan;
 
             canvasCtx.restore();
@@ -271,7 +320,6 @@
 
         pose.onResults(onResults);
 
-        // Menggunakan kamera belakang HP (environment) dan menghapus efek cermin (mirror)
         const camera = new Camera(videoElement, {
             onFrame: async () => {
                 await pose.send({image: videoElement});
